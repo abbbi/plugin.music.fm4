@@ -60,7 +60,12 @@ def get_broadcast_shows(day):
     
 if mode is None:
 
-    for day in get_broadcast_days():
+    days =  get_broadcast_days()
+    if len(days) <= 0:
+        dialog.ok(ADDON_NAME, 'No days found .. maybe somethings wrong with the FM4 API, exiting')
+        xbmc.executebuiltin("XBMC.Container.Update(path,replace)")
+
+    for day in days:
         url = build_url({'mode': 'folder', 'foldername': str(day)})
         li = xbmcgui.ListItem(str(day), iconImage='DefaultFolder.png')
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
