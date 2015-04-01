@@ -5,7 +5,6 @@ import requests
 import xbmcgui
 import xbmcplugin
 
-
 FM4_API_URL='http://audioapi.orf.at/fm4/json/2.0/broadcasts/'
 DOWNLOAD_URL='http://loopstream01.apa.at/?channel=fm4&id='
 
@@ -34,12 +33,11 @@ def get_broadcast_days():
 def get_broadcast_shows(day):
     r = requests.get(FM4_API_URL + day)
     s = r.json()
-
     shows = []
 
     for show in s:
         s=dict()
-        s['title'] = show['title']
+        s['title'] = show['title'].encode('utf-8')
         s['programKey'] = show['programKey']
         shows.append(s)
 
@@ -70,4 +68,5 @@ elif mode[0] == 'folder':
             url = (DOWNLOAD_URL + data['streams'][0]['loopStreamId'] + '&offset=0')
             li = xbmcgui.ListItem(day + ": " + str(show['title']), iconImage='DefaultVideo.png')
             xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
-            xbmcplugin.endOfDirectory(addon_handle)
+
+    xbmcplugin.endOfDirectory(addon_handle)
