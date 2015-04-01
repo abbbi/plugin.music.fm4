@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.music.fm4" name="FM4" version="1.0.1" provider-name="Michael Ablassmeier">
+<addon id="plugin.music.fm4" name="FM4 On Demand" version="1.0.1" provider-name="Michael Ablassmeier">
   <requires>
     <import addon="script.module.requests" version="2.4.3"/>
     <import addon="xbmc.python" version="2.1.0"/>
@@ -8,15 +8,15 @@
     <provides>audio</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">FM4 mediathek addon</summary>
-    <description lang="en">Listen to FM4 streams from ORF media library</description>
+    <summary lang="en">FM4 FM4 On Demand addon</summary>
+    <description lang="en">Listen to FM4 streams from FM4 On Demand</description>
     <disclaimer lang="en"></disclaimer>
     <language></language>
     <platform>all</platform>
     <license>GPL</license>
     <forum></forum>
-    <website></website>
+    <website>https://github.com/abbbi/plugin.music.fm4/</website>
     <email>abi@grinser.de</email>
-    <source></source>
+    <source>https://github.com/abbbi/plugin.music.fm4/</source>
   </extension>
 </addon>

@@ -7,10 +7,13 @@ import xbmcplugin
 
 FM4_API_URL='http://audioapi.orf.at/fm4/json/2.0/broadcasts/'
 DOWNLOAD_URL='http://loopstream01.apa.at/?channel=fm4&id='
+ADDON_NAME='FM4 On Demand'
 
 base_url = sys.argv[0]
 addon_handle = int(sys.argv[1])
 args = urlparse.parse_qs(sys.argv[2][1:])
+mode = args.get('mode', None)
+dialog = xbmcgui.Dialog()
 
 xbmcplugin.setContent(addon_handle, 'movies')
 
@@ -21,9 +24,13 @@ def get_broadcast_days():
     try:
         r = requests.get(FM4_API_URL)
     except:
-        self.message('nargh')
+        dialog.ok(ADDON_NAME, 'Error getting FM API data, see kodi.log')
 
-    bcd = r.json()
+    try:
+        bcd = r.json()
+    except:
+        dialog.ok(ADDON_NAME, 'Error parsing FM4 JSON API data')
+
     days = []
     for item in bcd:
         days.append(item['day'])
@@ -31,8 +38,16 @@ def get_broadcast_days():
     return days
 
 def get_broadcast_shows(day):
-    r = requests.get(FM4_API_URL + day)
-    s = r.json()
+    try:
+        r = requests.get(FM4_API_URL + day)
+    except:
+        dialog.ok(ADDON_NAME, 'Error getting FM API data for day %s ' % day)
+
+    try:
+        s = r.json()
+    except:
+        dialog.ok(ADDON_NAME, 'Error parsing FM4 JSON API data for day %s' % day)
+
     shows = []
 
     for show in s:
@@ -43,9 +58,6 @@ def get_broadcast_shows(day):
 
     return shows
     
- 
-mode = args.get('mode', None)
-
 if mode is None:
 
     for day in get_broadcast_days():
@@ -61,12 +73,20 @@ elif mode[0] == 'folder':
 
     shows = get_broadcast_shows(day)
 
+    if len(shows) <= 0:
+        dialog.ok(ADDON_NAME, 'No shows found .. maybe somethings wrong with the FM4 API, exiting')
+        xbmc.executebuiltin("XBMC.Container.Update(path,replace)")
+
     for show in shows:
         r = requests.get(FM4_API_URL + day + '/' + show['programKey'])
         data = r.json()
-        if data['streams']:
-            url = (DOWNLOAD_URL + data['streams'][0]['loopStreamId'] + '&offset=0')
-            li = xbmcgui.ListItem(day + ": " + str(show['title']), iconImage='DefaultVideo.png')
-            xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
+        try:
+            if data['streams']:
+                url = (DOWNLOAD_URL + data['streams'][0]['loopStreamId'] + '&offset=0')
+                li = xbmcgui.ListItem(day + ": " + str(show['title']), iconImage='DefaultVideo.png')
+                xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
+        except KeyError:
+            dialog.ok(ADDON_NAME,'Error: no streams found for this day')
+            xbmc.executebuiltin("XBMC.Container.Update(path,replace)")
 
     xbmcplugin.endOfDirectory(addon_handle)
