@@ -91,7 +91,7 @@ elif mode[0] == 'folder':
                 li = xbmcgui.ListItem(day + ": " + str(show['title']), iconImage='DefaultVideo.png')
                 xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
         except KeyError:
-            dialog.ok(ADDON_NAME,'Error: no streams found for this day')
+            dialog.ok(ADDON_NAME,'Error: no streams found for this day: %s' % day )
             xbmc.executebuiltin("XBMC.Container.Update(path,replace)")
 
     xbmcplugin.endOfDirectory(addon_handle)
