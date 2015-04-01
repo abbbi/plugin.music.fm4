@@ -1,54 +1,73 @@
-import json
-import requests
 import sys
+import urllib
+import urlparse
+import requests
+import xbmcgui
+import xbmcplugin
 
-import xbmc, xbmcgui
 
-#get actioncodes from https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/Key.h
-ACTION_PREVIOUS_MENU = 10
 FM4_API_URL='http://audioapi.orf.at/fm4/json/2.0/broadcasts/'
 DOWNLOAD_URL='http://loopstream01.apa.at/?channel=fm4&id='
 
-class FM4(xbmcgui.Window):
-    def __init__(self):
-        self.strActionInfo = xbmcgui.ControlLabel(250, 80, 200, 200, '', 'font14', '0xFFBBBBFF')
-        self.addControl(self.strActionInfo)
-        self.strActionInfo.setLabel('Push BACK to quit')
-        self.list = xbmcgui.ControlList(200, 150, 300, 400)
-        self.addControl(self.list)
+base_url = sys.argv[0]
+addon_handle = int(sys.argv[1])
+args = urlparse.parse_qs(sys.argv[2][1:])
 
-        self.days = self.get_broadcast_days()
-        for d in self.days:
-            self.list.addItem(str(d))
-        self.setFocus(self.list)
+xbmcplugin.setContent(addon_handle, 'movies')
 
-    def onAction(self, action):
-        if action == ACTION_PREVIOUS_MENU:
-            self.message('exit?')
-            self.close()
+def build_url(query):
+    return base_url + '?' + urllib.urlencode(query)
 
-    def onControl(self, control):
-        if control == self.list:
-            item = self.list.getSelectedItem()
-            self.message('You selected : ' + item.getLabel())
+def get_broadcast_days():
+    try:
+        r = requests.get(FM4_API_URL)
+    except:
+        self.message('nargh')
 
-    def message(self, message):
-        dialog = xbmcgui.Dialog()
-        dialog.ok("FM4", message)
+    bcd = r.json()
+    days = []
+    for item in bcd:
+        days.append(item['day'])
 
-    def get_broadcast_days(self):
-        try:
-            r = requests.get(FM4_API_URL)
-        except:
-            self.message('nargh')
+    return days
 
-        bcd = json.loads(r.content)
-        days = []
-        for item in bcd:
-            days.append(item['day'])
+def get_broadcast_shows(day):
+    r = requests.get(FM4_API_URL + day)
+    s = r.json()
 
-        return days
+    shows = []
 
-fm4dis = FM4()
-fm4dis.doModal()
-del fm4dis
+    for show in s:
+        s=dict()
+        s['title'] = show['title']
+        s['programKey'] = show['programKey']
+        shows.append(s)
+
+    return shows
+    
+ 
+mode = args.get('mode', None)
+
+if mode is None:
+
+    for day in get_broadcast_days():
+        url = build_url({'mode': 'folder', 'foldername': str(day)})
+        li = xbmcgui.ListItem(str(day), iconImage='DefaultFolder.png')
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
+                                listitem=li, isFolder=True)
+
+    xbmcplugin.endOfDirectory(addon_handle)
+
+elif mode[0] == 'folder':
+    day = args['foldername'][0]
+
+    shows = get_broadcast_shows(day)
+
+    for show in shows:
+        r = requests.get(FM4_API_URL + day + '/' + show['programKey'])
+        data = r.json()
+        if data['streams']:
+            url = (DOWNLOAD_URL + data['streams'][0]['loopStreamId'] + '&offset=0')
+            li = xbmcgui.ListItem(day + ": " + str(show['title']), iconImage='DefaultVideo.png')
+            xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
+            xbmcplugin.endOfDirectory(addon_handle)
